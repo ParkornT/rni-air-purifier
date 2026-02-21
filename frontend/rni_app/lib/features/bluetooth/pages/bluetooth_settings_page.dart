@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:rni_app/features/bluetooth/dialog/show_error_dialog.dart';
 import 'package:rni_app/features/bluetooth/providers/bluetooth_provider.dart';
 import 'package:rni_app/features/bluetooth/widgets/device_list_view.dart';
 
@@ -75,9 +76,20 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              bluetooth.isScanning
-                  ? bluetooth.stopScan()
-                  : bluetooth.startScan();
+              final bluetoothProvider = context.read<BluetoothProvider>();
+
+              if (bluetoothProvider.bluetoothAdapterState ==
+                  BluetoothAdapterState.on) {
+                bluetooth.isScanning
+                    ? bluetooth.stopScan()
+                    : bluetooth.startScan();
+              } else {
+                showAlert(
+                  context,
+                  title: "Bluetooth Disabled",
+                  message: "Please enable bluetooth",
+                );
+              }
             },
             child: bluetooth.isScanning ? Icon(Icons.stop) : Icon(Icons.start),
           ),

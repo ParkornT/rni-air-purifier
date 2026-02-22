@@ -15,7 +15,7 @@ class ChartProvider with ChangeNotifier {
   double _max = 0;
   double get max => _max;
 
-  bool _chartOn = true;
+  bool _chartOn = false;
   bool get chartOn => _chartOn;
 
   /*
@@ -58,18 +58,15 @@ class ChartProvider with ChangeNotifier {
 
   void togglePauseChart() {
     if (_chartOn == true) {
+      // Toggle the chart on
       _chartOn = false;
-      notifyListeners();
     } else {
-      reset();
+      //Reset the chart and start
+      _graphData.clear();
+      _average = 0;
+      _max = 0;
+      _chartOn = true;
     }
-  }
-
-  void reset() {
-    _graphData.clear();
-    _average = 0;
-    _max = 0;
-    _chartOn = true;
     notifyListeners();
   }
 }

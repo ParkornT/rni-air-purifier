@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rni_app/features/bluetooth/dialog/show_error_dialog.dart';
+import 'package:rni_app/features/bluetooth/providers/bluetooth_provider.dart';
 import 'package:rni_app/features/main/providers/live_chart_provider.dart';
 
 /*
@@ -13,18 +15,26 @@ class TogglePMChartButton extends StatefulWidget {
 }
 
 class _TogglePMChartButtonState extends State<TogglePMChartButton> {
-  bool pause = false;
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
       onPressed: () {
-        setState(() {
-          context.read<ChartProvider>().togglePauseChart();
-          pause = !pause;
-        });
+        if (context.read<BluetoothProvider>().deviceIsConnected()) {
+          setState(() {
+            context.read<ChartProvider>().togglePauseChart();
+          });
+        } else {
+          showAlert(
+            context,
+            title: "Device is not connected",
+            message: "Please connect the device first",
+          );
+        }
       },
       tooltip: 'Chart Toggle',
-      child: pause ? Icon(Icons.loop) : Icon(Icons.pause),
+      child: context.read<ChartProvider>().chartOn
+          ? Icon(Icons.stop)
+          : Icon(Icons.play_arrow),
     );
   }
 }

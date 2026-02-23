@@ -33,6 +33,7 @@ class ChartProvider with ChangeNotifier {
     }
     // If no data given, only shift and return
     if (newValue is! double) {
+      print("Data is not of type double:${newValue}");
       notifyListeners();
       return;
     }
@@ -61,7 +62,7 @@ class ChartProvider with ChangeNotifier {
       // Toggle the chart on
       _chartOn = false;
     } else {
-      //Reset the chart and start
+      // Reset the chart and start
       _graphData.clear();
       _average = 0;
       _max = 0;

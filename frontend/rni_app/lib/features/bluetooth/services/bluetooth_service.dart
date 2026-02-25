@@ -1,8 +1,39 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-/*
-  This service handles all BLE communication logic, works closely with BluetoothProvider
-*/
+/// [BlueService] (Not to be confused with `BluetoothService` from `flutter_blue_plus` package)
+///
+/// A [singleton] (only one instance) service responsible for handling Bluetooth Low Energy (BLE)
+/// communication logic using the `flutter_blue_plus` package. Works closely with [BluetoothProvider],
+/// which consumes this service to expose reactive state to the UI.
+///
+/// This service is responsible for:
+/// - Scanning for nearby BLE devices
+/// - Connecting and disconnecting from a BLE device
+/// - Discovering BLE services and characteristics
+/// - Subscribing to incoming notifications from the ESP32 (TX)
+/// - Writing outgoing data to the ESP32 (RX)
+///
+/// ## Singleton Pattern
+/// [BlueService] is implemented as a singleton to ensure only one instance
+/// manages the BLE adapter and characteristics at any time.
+///
+/// ```dart
+/// final service = BlueService(); // Always returns the same instance
+/// ```
+///
+/// ## BLE Communication Model
+/// ```
+/// Flutter (RX Write) ──► ESP32 RX Characteristic (6E400002)
+/// Flutter (TX Notify) ◄── ESP32 TX Characteristic (6E400003)
+///                         └── Both under Nordic UART Service (6E400001)
+/// ```
+/// ---------------------------------------------------------------------------
+/// Dependencies
+/// ---------------------------------------------------------------------------
+///
+/// - [BluetoothProvider] → Handles incoming/ongoing data and state managements
+///
+
 class BlueService {
   // Init as Singleton service for managing Bluetooth operations
   static final BlueService instance = BlueService._internal();
@@ -24,11 +55,12 @@ class BlueService {
   BluetoothCharacteristic? _txCharacteristic;
   BluetoothCharacteristic? _rxCharacteristic;
 
-  //TODO: remove Hardcode UUID
+  //TODO: remove Hardcode UUID (Maybe not)
   String serviceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
   String txUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
   String rxUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 
+  // Called from BluetoothProvider.init(). Only check if the class is initialized correctly
   Future<void> init() async {
     if (await FlutterBluePlus.isSupported == false) {
       throw Exception('Bluetooth is not supported by this device');
@@ -37,9 +69,8 @@ class BlueService {
 
   Future<void> startScan({
     Duration timeout = const Duration(seconds: 60),
-    List<String> keywords = const ["ESP32_BT"],
+    List<String> keywords = const ["ESP32_BT"], //Default Device Name
   }) async {
-    // Check Adapter state
     try {
       await FlutterBluePlus.startScan(
         timeout: timeout,
@@ -61,14 +92,6 @@ class BlueService {
 
   Future<void> connectToDevice(BluetoothDevice device) async {
     try {
-      // try {
-      //   await device.createBond(); // Pre-emptive bonding on Android
-      //   await Future.delayed(const Duration(milliseconds: 500));
-      // } catch (e) {
-      //   print('Bond creation note: $e');
-      //   // Continue anyway - not all devices require bonding
-      // }
-
       // Connect to chosen device
       await device.connect(license: License.free);
     } catch (e) {

@@ -25,7 +25,7 @@ class ConnectedDevicePage extends StatelessWidget {
           ),
         ],
       ),
-      body: SafeArea(child: ConnectedDevicePrintScreen()),
+      body: const SafeArea(child: ConnectedDevicePrintScreen()),
     );
   }
 }

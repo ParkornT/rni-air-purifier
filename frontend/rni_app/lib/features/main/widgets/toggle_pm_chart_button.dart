@@ -32,7 +32,9 @@ class _TogglePMChartButtonState extends State<TogglePMChartButton> {
             }
           },
           tooltip: 'Chart Toggle',
-          child: chart.chartOn ? Icon(Icons.stop) : Icon(Icons.play_arrow),
+          child: chart.chartOn
+              ? const Icon(Icons.stop)
+              : const Icon(Icons.play_arrow),
         );
       },
     );

@@ -31,13 +31,13 @@ class _SideNavigationState extends State<SideNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           children: [
             Text(
               "Rni Air Purifier",
               style: TextStyle(letterSpacing: -1, fontSize: 24),
             ),
-            const Spacer(), // Gap to the end of Appbar
+            Spacer(), // Gap to the end of Appbar
             DeviceAdapterState(),
             Gap(15),
             DeviceConnectionState(),

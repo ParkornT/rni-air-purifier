@@ -23,8 +23,8 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         elevation: 0,
       ),
-      body: Center(child: Column(children: [LivePMChart()])),
-      floatingActionButton: TogglePMChartButton(),
+      body: const Center(child: Column(children: [LivePMChart()])),
+      floatingActionButton: const TogglePMChartButton(),
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:rni_app/features/bluetooth/pages/bluetooth_settings_page.dart';
 import 'package:rni_app/features/main/pages/settings_page.dart';
 import 'package:rni_app/features/main/widgets/adapter_state.dart';
 import 'package:rni_app/features/main/widgets/device_connection_state.dart';
-import 'dashboard_page.dart';
+import 'package:rni_app/features/main/pages/dashboard_page.dart';
 
 class SideNavigation extends StatefulWidget {
   const SideNavigation({super.key});
@@ -14,16 +14,16 @@ class SideNavigation extends StatefulWidget {
 
 class _SideNavigationState extends State<SideNavigation> {
   int _selectedIndex = 0;
-  Widget _buildPage(int index) {
-    switch (_selectedIndex) {
+  Widget _buildPage(int selectedIndex) {
+    switch (selectedIndex) {
       case 0:
-        return DashboardPage();
+        return const DashboardPage();
       case 1:
-        return BluetoothSettingsPage();
+        return const BluetoothSettingsPage();
       case 2:
-        return SettingsPage();
+        return const SettingsPage();
       default:
-        return const SizedBox();
+        throw UnimplementedError();
     }
   }
 
@@ -37,7 +37,7 @@ class _SideNavigationState extends State<SideNavigation> {
               "Rni Air Purifier",
               style: TextStyle(letterSpacing: -1, fontSize: 24),
             ),
-            const Expanded(child: SizedBox()), // Gap to the end of Appbar
+            const Spacer(), // Gap to the end of Appbar
             DeviceAdapterState(),
             Gap(15),
             DeviceConnectionState(),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:rni_app/features/bluetooth/dialog/show_error_dialog.dart';
+import 'package:rni_app/features/main/dialog/show_error_dialog.dart';
 import 'package:rni_app/features/bluetooth/providers/bluetooth_provider.dart';
 
 class BluetoothScanButton extends StatelessWidget {

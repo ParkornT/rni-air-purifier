@@ -1,28 +1,79 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:rni_app/features/bluetooth/services/bluetooth_service.dart';
 import 'package:rni_app/features/main/providers/live_chart_provider.dart';
-import '../services/bluetooth_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 
+/// [BluetoothProvider]
+///
+/// Manages all Bluetooth Low Energy (BLE) states, including:
+/// - Connection handling
+/// - Data transmission
+/// - Adapter state management
+/// - Calling BlueService methods
+///
+/// Acts as the bridge between the UI layer and [BlueService]
+/// - UI → Listens and reacts to state changes via [Consumer] or `context.watch`
+/// - [BlueService] → Handles BLE logic and raw `flutter_blue_plus` operations
+///
+/// ---------------------------------------------------------------------------
+/// Responsibilities
+/// ---------------------------------------------------------------------------
+///
+/// - Listening to Bluetooth adapter state (on/off/unavailable)
+/// - Listening to and parsing incoming data from the ESP32
+/// - Sending data to the connected ESP32 device (/TODO)
+/// - Forwarding parsed data points to [ChartProvider]
+/// - Calling [BlueService] to scan for nearby BLE devices
+///   (default filter: `ESP32_BT`)
+/// - Calling [BlueService] to connect and disconnect from a BLE device
+///
+/// ---------------------------------------------------------------------------
+/// Provider Registered at main.dart
+/// ---------------------------------------------------------------------------
+///
+/// ```dart
+/// ChangeNotifierProxyProvider<ChartProvider, BluetoothProvider>(
+///   create: (context) => BluetoothProvider(context.read<ChartProvider>()),
+///   update: (context, chart, previous) =>
+///     previous ?? BluetoothProvider(chart),
+/// )
+/// ```
+///
+/// ---------------------------------------------------------------------------
+/// Dependencies
+/// ---------------------------------------------------------------------------
+///
+/// - [BlueService] → Handles raw `flutter_blue_plus` operations
+/// - [ChartProvider] → Receives parsed data points for visualization
+///
+
 class BluetoothProvider with ChangeNotifier {
   final BlueService _bluetoothService = BlueService();
-  // State
-  List<ScanResult> _scanResults = [];
+
+  // Connection State
   BluetoothAdapterState _bluetoothAdapterState = BluetoothAdapterState.unknown;
-  bool _isScanning = false;
   BluetoothDevice? _connectedDevice;
+
+  // Device State
+  List<ScanResult> _scanResults = [];
   String _receivedData = "";
-  Stream<String>? _deviceDataStream;
-  final ChartProvider _chartProvider;
+  bool _isScanning = false;
+  Stream<String>? _deviceDataStream; // Listening device
+
+  // Consumer
+  final ChartProvider _chartProvider; //For ChartProvider.addPoint()
 
   BluetoothProvider(this._chartProvider);
 
-  // Getters
-  List<ScanResult> get scanResults => _scanResults;
+  // Conncection Getters
   BluetoothAdapterState get bluetoothAdapterState => _bluetoothAdapterState;
-  bool get isScanning => _isScanning;
   BluetoothDevice? get connectedDevice => _connectedDevice;
+
+  // Device state Getters
+  List<ScanResult> get scanResults => _scanResults;
   String get receivedData => _receivedData;
+  bool get isScanning => _isScanning;
 
   void init() async {
     await _bluetoothService.init();
@@ -34,12 +85,7 @@ class BluetoothProvider with ChangeNotifier {
   // Call BluetoothService to start scanning for bluetooth devices
   Future<void> startScan() async {
     try {
-      // if (!kIsWeb) {
-      //   if (Platform.isAndroid) {
-      //     await requestPermissions();
-      //     await FlutterBluePlus.turnOn();
-      //   }
-      // }
+      // Check the Adapter state before scanning
       if (_bluetoothAdapterState == BluetoothAdapterState.on) {
         _scanResults.clear();
         await _bluetoothService.startScan();
@@ -84,7 +130,7 @@ class BluetoothProvider with ChangeNotifier {
 
         // Parse and forward to ChartProvider
         final parsed = double.tryParse(data.trim());
-        _chartProvider.addData(parsed); // ChartProvider handles null already
+        _chartProvider.addData(parsed); // Add data point to Chart
 
         notifyListeners();
       });
@@ -155,6 +201,7 @@ class BluetoothProvider with ChangeNotifier {
   }
 
   Future<void> requestPermissions() async {
+    //TODO: add permission handler for IOS
     await [
       Permission.bluetoothScan,
       Permission.bluetoothConnect,

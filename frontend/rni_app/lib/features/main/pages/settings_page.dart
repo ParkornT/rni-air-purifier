@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rni_app/features/main/widgets/settings_switch.dart';
-import '../providers/theme_provider.dart';
+import 'package:rni_app/features/main/providers/theme_provider.dart';
 
 /*
 Index 3: App Settings
@@ -15,9 +15,9 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Settings',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
       body: Row(

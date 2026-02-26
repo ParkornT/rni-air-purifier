@@ -42,7 +42,7 @@ class _LivePMChartState extends State<LivePMChart> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             'Status: ',
                             style: TextStyle(fontSize: 24),
                             textAlign: TextAlign.center,
@@ -111,16 +111,16 @@ class _LivePMChartState extends State<LivePMChart> {
           child: LineChart(
             LineChartData(
               titlesData: FlTitlesData(
-                rightTitles: AxisTitles(
+                rightTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
-                topTitles: AxisTitles(
+                topTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
 
                 // Y AXIS
                 leftTitles: AxisTitles(
-                  axisNameWidget: Text('PM2.5 (µg/m³)'),
+                  axisNameWidget: const Text('PM2.5 (µg/m³)'),
                   axisNameSize: 30,
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -130,7 +130,7 @@ class _LivePMChartState extends State<LivePMChart> {
                 ),
 
                 // X AXIS
-                bottomTitles: AxisTitles(
+                bottomTitles: const AxisTitles(
                   sideTitleAlignment: SideTitleAlignment.outside,
                   axisNameWidget: Text(
                     'Time (seconds)',

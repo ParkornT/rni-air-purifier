@@ -8,7 +8,7 @@ class ConnectedDevicePrintScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<BluetoothProvider>(
-      builder: (context, provider, child) {
+      builder: (context, bluetooth, child) {
         return Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -19,13 +19,13 @@ class ConnectedDevicePrintScreen extends StatelessWidget {
                   Icon(
                     Icons.circle,
                     size: 12,
-                    color: provider.connectedDevice != null
+                    color: bluetooth.connectedDevice != null
                         ? Colors.green
                         : Colors.red,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    provider.connectedDevice != null
+                    bluetooth.connectedDevice != null
                         ? "Connected"
                         : "Disconnected",
                   ),
@@ -45,9 +45,9 @@ class ConnectedDevicePrintScreen extends StatelessWidget {
                   child: SingleChildScrollView(
                     reverse: true,
                     child: Text(
-                      provider.receivedData.isEmpty
+                      bluetooth.receivedData.isEmpty
                           ? "Waiting for data from ESP32..."
-                          : provider.receivedData,
+                          : bluetooth.receivedData,
                       style: const TextStyle(
                         color: Colors.greenAccent,
                         fontFamily: 'monospace',
@@ -61,7 +61,7 @@ class ConnectedDevicePrintScreen extends StatelessWidget {
 
               // Send button
               ElevatedButton.icon(
-                onPressed: () => provider.sendData("Hello ESP32!"),
+                onPressed: () => bluetooth.sendData("Hello ESP32!"),
                 icon: const Icon(Icons.send),
                 label: const Text("Send Test Message"),
               ),

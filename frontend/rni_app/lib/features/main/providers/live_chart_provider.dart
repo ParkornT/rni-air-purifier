@@ -33,7 +33,7 @@ class ChartProvider with ChangeNotifier {
     }
     // If no data given, only shift and return
     if (newValue is! double) {
-      print("Data is not of type double:${newValue}");
+      print("Data is not of type double:$newValue");
       notifyListeners();
       return;
     }

@@ -19,7 +19,7 @@ class SettingsSwitch extends StatelessWidget {
       leading: Switch(value: value, onChanged: onChanged),
       title: Text(
         text,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
       ),
     );
   }

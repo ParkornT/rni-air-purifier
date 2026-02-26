@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rni_app/features/main/providers/theme_provider.dart';
 import 'package:rni_app/features/themes/app_theme.dart';
-import 'package:rni_app/features/main/pages/home_page_navigation.dart';
+import 'package:rni_app/features/main/pages/side_navigation.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -11,9 +11,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     final darkMode = context.watch<ThemeProvider>().darkMode;
     return MaterialApp(
-      title: 'Rni Air Purifier',
       theme: darkMode ? darkTheme : lightTheme,
-      home: const HomePage(title: 'Rni Air Purifier'),
+      home: const SideNavigation(),
     );
   }
 }

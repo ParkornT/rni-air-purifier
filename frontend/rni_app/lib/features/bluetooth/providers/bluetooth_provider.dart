@@ -1,3 +1,5 @@
+import 'dart:async' show StreamSubscription;
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:rni_app/features/bluetooth/services/bluetooth_service.dart';
 import 'package:rni_app/features/main/providers/live_chart_provider.dart';
@@ -60,6 +62,9 @@ class BluetoothProvider with ChangeNotifier {
   String _receivedData = "";
   bool _isScanning = false;
   Stream<String>? _deviceDataStream; // Listening device
+  StreamSubscription<String>? _deviceDataSubscription;
+  StreamSubscription<BluetoothConnectionState>? _connectionStateSubscription;
+  String? _errorMessage;
 
   // Consumer
   final ChartProvider _chartProvider; //For ChartProvider.addPoint()
@@ -74,8 +79,18 @@ class BluetoothProvider with ChangeNotifier {
   List<ScanResult> get scanResults => _scanResults;
   String get receivedData => _receivedData;
   bool get isScanning => _isScanning;
+  String? get errorMessage => _errorMessage;
+
+  // Provider state
+
+  bool _initialized = false; // True if already initialized Listeners
+
+  bool _deviceDisconnecting = false; // Don't log Error if intended
 
   void init() async {
+    if (_initialized) return; // Only initialize once
+    _initialized = true;
+
     await _bluetoothService.init();
     _listenToScanResults();
     _listenToScanningState();
@@ -115,6 +130,19 @@ class BluetoothProvider with ChangeNotifier {
 
       _connectedDevice = device;
 
+      // Listen for unexpected disconnections (power off, out of range)
+      await _connectionStateSubscription?.cancel();
+      _connectionStateSubscription = connectionState(device).listen((state) {
+        print("Connection state changed: $state");
+        if (state == BluetoothConnectionState.disconnected &&
+            _deviceDisconnecting == false) {
+          _setError(
+            "Device disconnected! Please check your device's connection.",
+          );
+          disconnectDevice();
+        }
+      });
+
       // Discover services
       await _bluetoothService.discoverServices(device);
 
@@ -124,20 +152,18 @@ class BluetoothProvider with ChangeNotifier {
         print("characteristics not found!");
         return;
       }
-      _deviceDataStream!.listen((data) {
+
+      await _deviceDataSubscription?.cancel();
+      _deviceDataSubscription = _deviceDataStream!.listen((data) {
         _receivedData = data;
-        print("ESP32 says: $data");
-
-        // Parse and forward to ChartProvider
         final parsed = double.tryParse(data.trim());
-        _chartProvider.addData(parsed); // Add data point to Chart
-
+        _chartProvider.addData(parsed);
         notifyListeners();
       });
 
       notifyListeners();
     } catch (e) {
-      print("Failed to connnect: $e");
+      print("Failed to connect: $e");
       notifyListeners();
     }
   }
@@ -145,15 +171,21 @@ class BluetoothProvider with ChangeNotifier {
   // Disconnect from device
   Future<void> disconnectDevice() async {
     try {
+      _deviceDisconnecting = true;
       if (_connectedDevice != null) {
         await _bluetoothService.disconnectDevice(_connectedDevice!);
         print("Disconnected!");
       } else {
         print("Already disconnected!");
       }
+
+      await _deviceDataSubscription?.cancel();
+      await _connectionStateSubscription?.cancel();
+      _connectionStateSubscription = null;
+
       _connectedDevice = null;
       _receivedData = "";
-
+      _deviceDisconnecting = false;
       notifyListeners();
     } catch (e) {
       print("Failed to disconnect: $e");
@@ -213,5 +245,19 @@ class BluetoothProvider with ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  Stream<BluetoothConnectionState> connectionState(BluetoothDevice device) {
+    return device.connectionState;
+  }
+
+  void _setError(String message) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }

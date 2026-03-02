@@ -201,6 +201,14 @@ class BluetoothProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> sendDataWithAck(String message) async {
+    try {
+      return await _bluetoothService.sendDataWithAck(message);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Listen to BluetoothService and notify Comsumers on scan state changed
   void _listenToScanningState() async {
     _bluetoothService.isScanning.listen((scanning) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 /// [BlueService] (Not to be confused with `BluetoothService` from `flutter_blue_plus` package)
@@ -126,6 +128,26 @@ class BlueService {
       await _rxCharacteristic!.write(message.codeUnits);
     } catch (e) {
       throw Exception('Failed to send data: $e');
+    }
+  }
+
+  Future<bool> sendDataWithAck(
+    String message, {
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    try {
+      await _rxCharacteristic!.write(message.codeUnits, withoutResponse: false);
+
+      // Wait for ESP32 to notify back within timeout
+      final response = await _txCharacteristic!.onValueReceived
+          .timeout(timeout)
+          .first;
+
+      return String.fromCharCodes(response).isNotEmpty;
+    } on TimeoutException {
+      throw Exception('ESP32 did not respond in time');
+    } catch (e) {
+      throw Exception('Failed: $e');
     }
   }
 

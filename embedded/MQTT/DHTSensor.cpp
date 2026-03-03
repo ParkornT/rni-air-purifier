@@ -2,7 +2,7 @@
 #include "DHT.h"
 
 // กำหนดขาที่ต่อกับเซนเซอร์และประเภทของเซนเซอร์
-#define DHTPIN 21     // Pin connected to the DHT sensor's DATA pin
+#define DHTPIN 19     // Pin connected to the DHT sensor's DATA pin
 #define DHTTYPE DHT22 // DHT 22 (AM2302)
 
 // สร้างออบเจกต์ dht เพื่อเรียกใช้งาน

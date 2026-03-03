@@ -1,5 +1,6 @@
 #include "DHTSensor.h"
 #include "DustSensor.h"
+#include "OLEDDisplay.h"
 #include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
@@ -78,6 +79,9 @@ void setup() {
 
   // Initialize DHT Sensor
   initDHTSensor();
+
+  // Initialize OLED Display
+  initOLEDDisplay();
 }
 
 void loop() {
@@ -94,20 +98,21 @@ void loop() {
     wasConnected = true;
   }
 
+  // Read sensor values
+  float currentDust = readDustDensity();
+  float currentTemp = readTemperature();
+  float currentHum = readHumidity();
+
   if (deviceConnected) {
-    // Read dust density instead of random value
-    float currentDust = readDustDensity();
-
-    // Read temperature and humidity
-    float currentTemp = readTemperature();
-    float currentHum = readHumidity();
-
     // Create a message payload (e.g., comma separated: dust,temp,humidity)
     String msg = String(currentDust) + "," + String(currentTemp) + "," +
                  String(currentHum);
     pTxCharacteristic->setValue(msg.c_str());
     pTxCharacteristic->notify();
   }
+
+  // Update OLED display
+  updateDisplay(currentDust, currentTemp, currentHum, deviceConnected);
 
   // เซนเซอร์ DHT22 ทำงานค่อนข้างช้า ควรหน่วงเวลาอย่างน้อย 2 วินาที (2000 ms)
   delay(2000);

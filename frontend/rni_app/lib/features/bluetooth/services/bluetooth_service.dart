@@ -140,7 +140,7 @@ class BlueService {
     try {
       await _rxCharacteristic!.write(message.codeUnits, withoutResponse: false);
 
-      final response = await _dustCharacteristic!.onValueReceived
+      final response = await _rxCharacteristic!.onValueReceived
           .timeout(timeout)
           .first;
 

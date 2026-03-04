@@ -126,7 +126,7 @@ class _LivePMChartState extends State<LivePMChart> {
 
                 // Y AXIS
                 leftTitles: AxisTitles(
-                  axisNameWidget: const Text('Dust (mg/m³)'),
+                  axisNameWidget: const Text('Dust (µg/m³)'),
                   axisNameSize: 30,
                   sideTitles: SideTitles(
                     showTitles: true,

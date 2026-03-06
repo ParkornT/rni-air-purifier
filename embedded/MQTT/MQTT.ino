@@ -164,6 +164,9 @@ void loop() {
 
     // ทดสอบเปิด-ปิด Relay สลับกันทุกรอบการทำงาน
     toggleRelay();
+
+    // Update OLED
+    updateDisplay(currentDust, currentTemp, currentHum, deviceConnected);
   }
 
   // --- DHT Sensor: every 2000ms ---
@@ -181,8 +184,5 @@ void loop() {
       pHumCharacteristic->setValue(String(currentHum).c_str());
       pHumCharacteristic->notify();
     }
-
-    // Update OLED only when DHT refreshes
-    updateDisplay(currentDust, currentTemp, currentHum, deviceConnected);
   }
 }

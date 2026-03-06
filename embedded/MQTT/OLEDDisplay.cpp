@@ -41,13 +41,13 @@ void updateDisplay(float dustDensity, float temp, float hum,
   display.drawLine(0, 10, 128, 10, WHITE);
 
   // 2. แสดงค่าฝุ่น PM2.5 (เน้นตัวใหญ่ให้อ่านง่าย)
-  display.setCursor(0, 16);
+  display.setCursor(0, 12);
   display.setTextSize(1);
-  display.print("PM2.5: ");
-  display.setTextSize(2);        // ขยายฟอนต์เป็นขนาด 2
-  display.print(dustDensity, 1); // แสดงทศนิยม 1 ตำแหน่ง
-  display.setTextSize(1);
-  display.print(" ug/m3");
+  display.print("PM2.5:");
+  display.setTextSize(2);       // ขยายฟอนต์เป็นขนาด 2
+  display.print(dustDensity,1); // แสดงทศนิยม 1 ตำแหน่ง
+  display.setTextSize(1); 
+  display.print("ug/m3");
 
   // 3. แสดงอุณหภูมิและความชื้น (บรรทัดล่างสุด แบ่งเป็น 2 บรรทัดย่อย)
   display.setCursor(0, 40);

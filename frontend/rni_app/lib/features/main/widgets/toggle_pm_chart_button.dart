@@ -21,7 +21,7 @@ class _TogglePMChartButtonState extends State<TogglePMChartButton> {
       builder: (context, chart, _) {
         final online =
             chart.chartOn &&
-            context.watch<BluetoothProvider>().deviceIsConnected();
+            (context.watch<BluetoothProvider>().connectedDevice != null);
         return FloatingActionButton(
           onPressed: () {
             if (context.read<BluetoothProvider>().deviceIsConnected()) {

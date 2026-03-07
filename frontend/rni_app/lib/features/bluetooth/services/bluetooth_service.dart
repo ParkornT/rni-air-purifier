@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:rni_app/features/main/providers/live_chart_provider.dart';
 
 /// [BlueService] (Not to be confused with `BluetoothService` from `flutter_blue_plus` package)
 ///

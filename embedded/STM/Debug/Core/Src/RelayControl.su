@@ -1,0 +1,5 @@
+../Core/Src/RelayControl.c:5:6:initRelay	8	static
+../Core/Src/RelayControl.c:10:6:turnOnRelay	8	static
+../Core/Src/RelayControl.c:16:6:turnOffRelay	8	static
+../Core/Src/RelayControl.c:22:9:toggleRelay	8	static
+../Core/Src/RelayControl.c:31:9:getRelayState	4	static

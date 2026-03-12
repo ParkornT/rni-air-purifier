@@ -55,6 +55,13 @@ float tempVal = 0.0;
 float humVal = 0.0;
 uint32_t lastReadTick = 0;
 
+// Moving Average Settings (30 seconds)
+// Loop runs every 2000ms (2s), so 30s / 2s = 15 samples
+#define DUST_MA_SIZE 15
+float dust_ma[DUST_MA_SIZE] = {0};
+uint8_t dust_ma_idx = 0;
+uint8_t dust_ma_count = 0;
+
 // UART RX Variables
 uint8_t rxBuffer[32];
 uint8_t rxByte;
@@ -128,10 +135,42 @@ int main(void) {
       lastReadTick = currentTick;
 
       // Read Sensors
-      dustVal = readDustDensity(&hadc1);
-      readDHT22(&tempVal, &humVal);
+      float raw_dust = readDustDensity(&hadc1);
+      float raw_temp = 0.0, raw_hum = 0.0;
+      uint8_t dht_ok = readDHT22(&raw_temp, &raw_hum);
 
-      // Decision Logic (Only applies if in Auto Mode)
+      // --- 1. OOR (Out Of Range) Check ---
+      if (raw_dust < 0.0)
+        raw_dust = 0.0;
+      else if (raw_dust > 2000.0)
+        raw_dust = 2000.0; // Reasonable max limits
+
+      if (dht_ok) {
+        if (raw_temp < -40.0 || raw_temp > 80.0)
+          dht_ok = 0; // Temp OOR
+        if (raw_hum < 0.0 || raw_hum > 100.0)
+          dht_ok = 0; // Hum OOR
+      }
+
+      // Update Temp/Hum only if data is valid and in range
+      if (dht_ok) {
+        tempVal = raw_temp;
+        humVal = raw_hum;
+      }
+
+      // --- 2. Moving Average (Dust 30 seconds) ---
+      dust_ma[dust_ma_idx] = raw_dust;
+      dust_ma_idx = (dust_ma_idx + 1) % DUST_MA_SIZE;
+      if (dust_ma_count < DUST_MA_SIZE)
+        dust_ma_count++;
+
+      float sum_dust = 0;
+      for (int i = 0; i < dust_ma_count; i++) {
+        sum_dust += dust_ma[i];
+      }
+      dustVal = sum_dust / dust_ma_count;
+
+      // --- 3. Decision Logic (Only applies if in Auto Mode) ---
       if (isAutoMode) {
         if (dustVal > 50.0) {
           turnOnRelay();

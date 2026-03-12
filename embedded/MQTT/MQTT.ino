@@ -1,7 +1,4 @@
-#include "DHTSensor.h"
-#include "DustSensor.h"
 #include "OLEDDisplay.h"
-#include "RelayControl.h"
 #include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
@@ -9,16 +6,12 @@
 #include <stdlib.h>
 
 #define DEVICE_NAME "ESP32_BT"
-#define SERVICE_UUID "6e400001-b5a3-f393-e0a9-e50e24dcca9e" // Device UUID
-#define CHARACTERISTIC_UUID_RX "6e400002-b5a3-f393-e0a9-e50e24dcca9e" // Read
-#define CHARACTERISTIC_UUID_DUST                                               \
-  "6e400003-b5a3-f393-e0a9-e50e24dcca9e" // Write Dust
-#define CHARACTERISTIC_UUID_TEMP                                               \
-  "6e400004-b5a3-f393-e0a9-e50e24dcca9e" // Write temperature
-#define CHARACTERISTIC_UUID_HUM                                                \
-  "6e400005-b5a3-f393-e0a9-e50e24dcca9e" // Write Humidity
-#define CHARACTERISTIC_UUID_RESPONSE                                           \
-  "6e400006-b5a3-f393-e0a9-e50e24dcca9e" // Write Flutter ACK response
+#define SERVICE_UUID "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_RX "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_DUST "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_TEMP "6e400004-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_HUM "6e400005-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_RESPONSE "6e400006-b5a3-f393-e0a9-e50e24dcca9e"
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pDustCharacteristic;
@@ -29,17 +22,12 @@ BLECharacteristic *pResponseCharacteristic;
 bool deviceConnected = false;
 bool wasConnected = false; // ← Track previous state
 
-unsigned long lastDustSample = 0;
-unsigned long lastDHTSample = 0;
-
 #define DUST_INTERVAL 500
 #define DHT_INTERVAL 2000
 
 float currentDust = 0;
 float currentTemp = 0;
 float currentHum = 0;
-bool fanAuto = true;
-bool fanManualOn = false;
 
 // Mutex to prevent simultaneous BLE writes from different tasks
 portMUX_TYPE bleMux = portMUX_INITIALIZER_UNLOCKED;
@@ -58,44 +46,30 @@ class MyServerCallbacks : public BLEServerCallbacks {
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     String rxValue = pCharacteristic->getValue();
-    if (rxValue.length() == 0) return;
+    if (rxValue.length() > 0) {
+      Serial.print("Received: ");
+      Serial.println(rxValue.c_str());
 
-    Serial.print("Received: ");
-    Serial.println(rxValue.c_str());
-
-    if (rxValue == "ON") {
-      turnOnRelay();
-
-    } else if (rxValue == "OFF") {
-      turnOffRelay();
-
-    } else if (rxValue == "Fan toggle") {
-      bool relayState = toggleRelay();
-      pResponseCharacteristic->setValue(relayState ? "Fan:ON" : "Fan:OFF");
-      pResponseCharacteristic->notify();
-
-    } else if (rxValue == "Fan Manual") {
-      fanAuto = false;
-      pResponseCharacteristic->setValue("Mode:Manual");
-      pResponseCharacteristic->notify();
-
-    } else if (rxValue == "Fan Auto") {
-      fanAuto = true;
-      pResponseCharacteristic->setValue("Mode:Auto");
-      pResponseCharacteristic->notify();
-
-    } else if (rxValue == "Fan Manual Off") {
-      fanManualOn = false;
-      pResponseCharacteristic->setValue("Mode:Manual On");
-      pResponseCharacteristic->notify();
-
-    } else if (rxValue == "Fan Manual On") {
-      fanManualOn = true;
-      pResponseCharacteristic->setValue("Mode:Manual Off");
-      pResponseCharacteristic->notify();
-
-    } else {
-      Serial.println("Unknown command: " + rxValue);
+      // ตรวจสอบคำสั่งเพื่อควบคุม Relay ไปยัง STM32
+      if (rxValue.indexOf("Fan Manual On") != -1) {
+        Serial2.print("CMD:ON\n");
+      } else if (rxValue.indexOf("Fan Manual Off") != -1) {
+        Serial2.print("CMD:OFF\n");
+      } else if (rxValue.indexOf("Fan Auto") != -1) {
+        Serial2.print("CMD:AUTO\n");
+      } else if (rxValue.indexOf("Fan Manual") != -1) {
+        Serial2.print("CMD:OFF\n"); // Default behavior for just "Fan Manual"
+      } else if (rxValue.indexOf("ON") != -1) {
+        Serial2.print("CMD:ON\n");
+      } else if (rxValue.indexOf("OFF") != -1) {
+        Serial2.print("CMD:OFF\n");
+      } else if (rxValue.indexOf("toggle") != -1 ||
+                 rxValue.indexOf("TOGGLE") != -1) {
+        Serial2.print("CMD:TOGGLE\n");
+      } else if (rxValue.indexOf("Auto") != -1 ||
+                 rxValue.indexOf("AUTO") != -1) {
+        Serial2.print("CMD:AUTO\n");
+      }
     }
   }
 };
@@ -151,17 +125,11 @@ void setup() {
   pServer->getAdvertising()->start();
   Serial.println("BLE UART ready! Waiting for connections...");
 
-  // Initialize Dust Sensor
-  initDustSensor();
-
-  // Initialize DHT Sensor
-  initDHTSensor();
+  // Initialize STM32 UART (RX2 = 16, TX2 = 17)
+  Serial2.begin(115200, SERIAL_8N1, 16, 17);
 
   // Initialize OLED Display
   initOLEDDisplay();
-
-  // Initialize Relay
-  initRelay();
 }
 
 void loop() {
@@ -180,50 +148,56 @@ void loop() {
     wasConnected = true;
   }
 
-  // --- Dust Sensor: every 500ms ---
-  if (now - lastDustSample >= DUST_INTERVAL) {
-    lastDustSample = now;
-    currentDust = readDustDensity();
-    // currentDust = random(0,200);
+  // Read data from STM32 continuously
+  if (Serial2.available()) {
+    String rx = Serial2.readStringUntil('\n');
+    rx.trim();
+    if (rx.length() > 0) {
+      Serial.println("STM32: " + rx);
 
-    // ควบคุมพัดลมอัตโนมัติจากค่าฝุ่น
-    // Fan Manual
-    if ( fanAuto == false && fanManualOn == true ) {
-      turnOnRelay();
-    } else if ( fanAuto == false && fanManualOn == false ) {
-      turnOffRelay();
-    }
-    // Fan Auto
-    else if (currentDust > 50.0) {
-      turnOnRelay();
-    } else if (currentDust < 30.0) {
-      turnOffRelay();
-    }
+      // PM:35.0,T:28.5,H:60.0,R:1,M:1
+      int pmIdx = rx.indexOf("PM:");
+      int tIdx = rx.indexOf(",T:");
+      int hIdx = rx.indexOf(",H:");
+      int rIdx = rx.indexOf(",R:");
+      int mIdx = rx.indexOf(",M:");
 
-    if (deviceConnected) {
-      String msg = String(currentDust);
-      pDustCharacteristic->setValue(msg.c_str());
-      pDustCharacteristic->notify();
-    }
+      if (pmIdx != -1 && tIdx != -1 && hIdx != -1 && rIdx != -1) {
+        currentDust = rx.substring(pmIdx + 3, tIdx).toFloat();
+        currentTemp = rx.substring(tIdx + 3, hIdx).toFloat();
+        currentHum = rx.substring(hIdx + 3, rIdx).toFloat();
 
-    // Update OLED
-    updateDisplay(currentDust, currentTemp, currentHum, deviceConnected);
-  }
+        int currentRelay;
+        int currentMode = 1; // Default to Auto
 
-  // --- DHT Sensor: every 2000ms ---
-  if (now - lastDHTSample >= DHT_INTERVAL) {
-    lastDHTSample = now;
-    currentTemp = readTemperature();
-    currentHum = readHumidity();
-    // currentTemp = 20 + random(20,40)/10;
-    // currentHum  = random(0,100);
+        if (mIdx != -1) {
+          currentRelay = rx.substring(rIdx + 3, mIdx).toInt();
+          currentMode = rx.substring(mIdx + 3).toInt();
+        } else {
+          currentRelay = rx.substring(rIdx + 3).toInt();
+        }
 
-    if (deviceConnected) {
-      pTempCharacteristic->setValue(String(currentTemp).c_str());
-      pTempCharacteristic->notify();
+        // Update OLED
+        updateDisplay(currentDust, currentTemp, currentHum, deviceConnected);
 
-      pHumCharacteristic->setValue(String(currentHum).c_str());
-      pHumCharacteristic->notify();
+        // Update BLE
+        if (deviceConnected) {
+          pDustCharacteristic->setValue(String(currentDust).c_str());
+          pDustCharacteristic->notify();
+
+          pTempCharacteristic->setValue(String(currentTemp).c_str());
+          pTempCharacteristic->notify();
+
+          pHumCharacteristic->setValue(String(currentHum).c_str());
+          pHumCharacteristic->notify();
+
+          String rState = (currentRelay == 1) ? "Fan:ON" : "Fan:OFF";
+          rState += (currentMode == 1) ? " [AUTO]" : " [MANUAL]";
+
+          pResponseCharacteristic->setValue(rState.c_str());
+          pResponseCharacteristic->notify();
+        }
+      }
     }
   }
 }

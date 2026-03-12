@@ -1,0 +1,3 @@
+../Core/Src/DustSensor.c:7:13:delay_us	24	static,ignoring_inline_asm
+../Core/Src/DustSensor.c:15:6:initDustSensor	4	static
+../Core/Src/DustSensor.c:19:7:readDustDensity	40	static

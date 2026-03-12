@@ -1,0 +1,5 @@
+../Core/Src/DHTSensor.c:6:13:dht_delay_us	2
+../Core/Src/DHTSensor.c:13:13:set_dht_pin_output	1
+../Core/Src/DHTSensor.c:21:13:set_dht_pin_input	1
+../Core/Src/DHTSensor.c:29:6:initDHTSensor	1
+../Core/Src/DHTSensor.c:34:9:readDHT22	16
